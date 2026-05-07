@@ -24,8 +24,23 @@ The script will:
 
 - update package lists
 - install Apache, PHP, and the Apache PHP module
+- write `AZURE_STORAGE_CONNECTION_STRING` into `/etc/apache2/conf-available/azure-storage-env.conf`
 - enable and restart Apache
 - copy `index.php` to `/var/www/html/index.php`
+
+To set the Azure Storage connection string when using the setup script, export it before running the script:
+
+```bash
+export AZURE_STORAGE_CONNECTION_STRING="<your-connection-string>"
+./setup-web.sh
+```
+
+If you need to change it later on the VM, edit `/etc/apache2/conf-available/azure-storage-env.conf` and then restart Apache:
+
+```bash
+sudo nano /etc/apache2/conf-available/azure-storage-env.conf
+sudo systemctl restart apache2
+```
 
 After the script finishes, open `http://<your-vm-public-ip>/` in a browser.
 
@@ -42,9 +57,26 @@ The cloud-init configuration will:
 
 - update packages
 - install Apache, PHP, and the Apache PHP module
+- create `/etc/apache2/conf-available/azure-storage-env.conf`
 - create `/var/www/html/index.php`
 - create `/var/www/html/uploads`
 - enable and restart Apache
+
+Before creating the VM, edit `cloud-init.yml` and replace the empty value in the `write_files` entry for `/etc/apache2/conf-available/azure-storage-env.conf`:
+
+```yaml
+write_files:
+	- path: /etc/apache2/conf-available/azure-storage-env.conf
+		content: |
+			SetEnv AZURE_STORAGE_CONNECTION_STRING "<your-connection-string>"
+```
+
+If the VM is already running, update `/etc/apache2/conf-available/azure-storage-env.conf` directly on the VM and restart Apache:
+
+```bash
+sudo nano /etc/apache2/conf-available/azure-storage-env.conf
+sudo systemctl restart apache2
+```
 
 Note: `cloud-init.yml` contains its own embedded PHP page content. If you want cloud-init to deploy the repository's `index.php` exactly, update the `write_files` section in `cloud-init.yml` to match that file.
 

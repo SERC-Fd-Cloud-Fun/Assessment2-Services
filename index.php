@@ -1,6 +1,10 @@
 <?php
 // Basic upload handling for a college registration demo.
 $statusMessage = '';
+$storageConnectionString = getenv('AZURE_STORAGE_CONNECTION_STRING');
+$storageStatusMessage = ($storageConnectionString !== false && trim($storageConnectionString) !== '')
+    ? 'Azure Storage connection string is set.'
+    : 'Azure Storage connection string is not set.';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $studentName = trim($_POST['student_name'] ?? '');
@@ -124,6 +128,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($statusMessage !== ''): ?>
             <div class="status"><?php echo $statusMessage; ?></div>
         <?php endif; ?>
+
+        <div class="status"><?php echo htmlspecialchars($storageStatusMessage, ENT_QUOTES, 'UTF-8'); ?></div>
     </div>
 </body>
 </html>
