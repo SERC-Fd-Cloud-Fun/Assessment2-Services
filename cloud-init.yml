@@ -1,0 +1,150 @@
+#cloud-config
+package_update: true
+packages:
+  - apache2
+  - php
+  - libapache2-mod-php
+
+write_files:
+  - path: /var/www/html/index.php
+    owner: www-data:www-data
+    permissions: '0644'
+    content: |
+      <?php
+      // Basic upload handling for a college registration demo.
+      $statusMessage = '';
+
+      if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+          $studentName = trim($_POST['student_name'] ?? '');
+          $studentId = trim($_POST['student_id'] ?? '');
+
+          if ($studentName === '' || $studentId === '') {
+              $statusMessage = 'Please provide both student name and student ID.';
+          } elseif (!isset($_FILES['supporting_document']) || $_FILES['supporting_document']['error'] !== UPLOAD_ERR_OK) {
+              $statusMessage = 'Please select a file to upload.';
+          } else {
+              $uploadDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
+
+              if (!is_dir($uploadDir)) {
+                  mkdir($uploadDir, 0777, true);
+              }
+
+              $originalName = basename($_FILES['supporting_document']['name']);
+              $safeName = preg_replace('/[^A-Za-z0-9._-]/', '_', $originalName);
+              $targetPath = $uploadDir . DIRECTORY_SEPARATOR . time() . '_' . $safeName;
+
+              if (move_uploaded_file($_FILES['supporting_document']['tmp_name'], $targetPath)) {
+                  $statusMessage = 'Registration submitted successfully. File uploaded: ' . htmlspecialchars($safeName, ENT_QUOTES, 'UTF-8');
+              } else {
+                  $statusMessage = 'Upload failed. Please try again.';
+              }
+          }
+      }
+      ?>
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>College Registration - File Upload</title>
+          <style>
+              body {
+                  font-family: Arial, sans-serif;
+                  background: #f4f6f8;
+                  margin: 0;
+                  padding: 24px;
+              }
+
+              .container {
+                  max-width: 520px;
+                  margin: 0 auto;
+                  background: #fff;
+                  border: 1px solid #d9dee3;
+                  border-radius: 8px;
+                  padding: 24px;
+              }
+
+              h1 {
+                  margin-top: 0;
+                  font-size: 1.5rem;
+                  color: #1f2933;
+              }
+
+              p {
+                  color: #52606d;
+              }
+
+              label {
+                  display: block;
+                  margin-top: 14px;
+                  margin-bottom: 6px;
+                  font-weight: 600;
+                  color: #243b53;
+              }
+
+              input[type="text"],
+              input[type="file"] {
+                  width: 100%;
+                  padding: 10px;
+                  border: 1px solid #bcccdc;
+                  border-radius: 4px;
+                  box-sizing: border-box;
+              }
+
+              button {
+                  margin-top: 18px;
+                  background: #1f6feb;
+                  color: #fff;
+                  border: 0;
+                  padding: 10px 16px;
+                  border-radius: 4px;
+                  cursor: pointer;
+              }
+
+              button:hover {
+                  background: #195bc2;
+              }
+
+              .status {
+                  margin-top: 14px;
+                  padding: 10px;
+                  background: #e9f2ff;
+                  border: 1px solid #b6d4fe;
+                  border-radius: 4px;
+                  color: #0b3d91;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <h1>College Registration</h1>
+              <p>Fill in your details and upload your supporting document (e.g., transcript or ID scan).</p>
+
+              <form method="post" enctype="multipart/form-data">
+                  <label for="student_name">Student Name</label>
+                  <input type="text" id="student_name" name="student_name" required>
+
+                  <label for="student_id">Student ID</label>
+                  <input type="text" id="student_id" name="student_id" required>
+
+                  <label for="supporting_document">Supporting Document</label>
+                  <input type="file" id="supporting_document" name="supporting_document" required>
+
+                  <button type="submit">Submit Registration</button>
+              </form>
+
+              <?php if ($statusMessage !== ''): ?>
+                  <div class="status"><?php echo $statusMessage; ?></div>
+              <?php endif; ?>
+          </div>
+      </body>
+      </html>
+
+runcmd:
+  - mkdir -p /var/www/html/uploads
+  - chown -R www-data:www-data /var/www/html/uploads
+  - chmod 755 /var/www/html/uploads
+  - systemctl enable apache2
+  - systemctl restart apache2
+
+final_message: "Cloud-init complete: Apache, PHP, and index.php are ready at /var/www/html."
