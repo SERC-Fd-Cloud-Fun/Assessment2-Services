@@ -1,10 +1,10 @@
 #cloud-config
 # =============================================================================
-# cloud-init.yaml — Open Day Registration App
+# cloud-init.yaml - Open Day Registration App
 #
 # Provisions Apache2 + PHP + the file-upload app on first boot.
 #
-# BEFORE USE — replace the placeholder below with your real connection string:
+# BEFORE USE - replace the placeholder below with your real connection string:
 #
 #   sed -i 's|REPLACE_WITH_CONNECTION_STRING|DefaultEndpointsProtocol=https;...|' cloud-init.yaml
 #
