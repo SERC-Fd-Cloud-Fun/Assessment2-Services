@@ -1,0 +1,342 @@
+#cloud-config
+# =============================================================================
+# cloud-init.yaml — Open Day Registration App
+#
+# Provisions Apache2 + PHP + the file-upload app on first boot.
+#
+# BEFORE USE — replace the placeholder below with your real connection string:
+#
+#   sed -i 's|REPLACE_WITH_CONNECTION_STRING|DefaultEndpointsProtocol=https;...|' cloud-init.yaml
+#
+# Then pass the file to your Azure CLI VM create command:
+#
+#   az vm create \
+#     --resource-group <rg> \
+#     --name openday-vm \
+#     --image Ubuntu2404 \
+#     --custom-data @cloud-init.yaml \
+#     --generate-ssh-keys \
+#     --public-ip-sku Standard \
+#     --size Standard_B1s
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Packages to install (runs apt-get update automatically)
+# ---------------------------------------------------------------------------
+package_update: true
+package_upgrade: true
+
+packages:
+  - apache2
+  - php
+  - libapache2-mod-php
+  - php-cli
+  - php-curl
+  - php-fileinfo
+  - php-json
+  - php-mbstring
+  - php-xml
+  - php-zip
+  - unzip
+  - curl
+  - rsync
+
+# ---------------------------------------------------------------------------
+# Write application files and Apache configuration
+# ---------------------------------------------------------------------------
+write_files:
+
+  # -- index.php (base64 encoded) ------------------------------------------
+  - path: /var/www/openday/index.php
+    encoding: b64
+    owner: www-data:www-data
+    permissions: '0640'
+    content: |
+      PD9waHANCnJlcXVpcmVfb25jZSBfX0RJUl9fIC4gJy92ZW5kb3IvYXV0b2xvYWQucGhwJzsN
+      Cg0KdXNlIE1pY3Jvc29mdEF6dXJlXFN0b3JhZ2VcQmxvYlxCbG9iUmVzdFByb3h5Ow0KdXNl
+      IE1pY3Jvc29mdEF6dXJlXFN0b3JhZ2VcQ29tbW9uXEV4Y2VwdGlvbnNcU2VydmljZUV4Y2Vw
+      dGlvbjsNCg0KLy8gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+      LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQovLyBDb25maWd1cmF0aW9uDQovLyAt
+      LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+      LS0tLS0tLS0tLS0tLS0tLS0NCmRlZmluZSgnU1RPUkFHRV9DT05UQUlORVInLCAncmVnaXN0
+      cmF0aW9ucycpOw0KZGVmaW5lKCdNQVhfRklMRV9TSVpFX01CJywgMTApOw0KZGVmaW5lKCdB
+      TExPV0VEX1RZUEVTJywgWydhcHBsaWNhdGlvbi9wZGYnLCAnaW1hZ2UvanBlZycsICdpbWFn
+      ZS9wbmcnLCAnaW1hZ2UvZ2lmJ10pOw0KZGVmaW5lKCdBTExPV0VEX0VYVEVOU0lPTlMnLCBb
+      J3BkZicsICdqcGcnLCAnanBlZycsICdwbmcnLCAnZ2lmJ10pOw0KDQovLyAtLS0tLS0tLS0t
+      LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+      LS0tLS0tLS0tDQovLyBTdGF0dXMgY2hlY2tzDQovLyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+      LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0NCiRo
+      b3N0bmFtZSA9IGdldGhvc3RuYW1lKCkgPzogJ1Vua25vd24nOw0KDQokY29ubmVjdGlvblN0
+      cmluZyA9IGdldGVudignQVpVUkVfU1RPUkFHRV9DT05ORUNUSU9OX1NUUklORycpOw0KJHNu
+      b3JhZ2VPayAgICAgICAgPSBmYWxzZTsNCiRzdG9yYWdlTWVzc2FnZSAgID0gJyc7DQoNCmlm
+      IChlbXB0eSgkY29ubmVjdGlvblN0cmluZykpIHsNCiAgICAkc3RvcmFnZU1lc3NhZ2UgPSAn
+      RW52aXJvbm1lbnQgdmFyaWFibGUgQVpVUkVfU1RPUkFHRV9DT05ORUNUSU9OX1NUUklORyBp
+      cyBub3Qgc2V0Lic7DQp9IGVsc2Ugew0KICAgIHRyeSB7DQogICAgICAgICRibG9iQ2xpZW50
+      ID0gQmxvYlJlc3RQcm94eTo6Y3JlYXRlQmxvYlNlcnZpY2UoJGNvbm5lY3Rpb25TdHJpbmcp
+      Ow0KICAgICAgICAvLyBMaWdodHdlaWdodCBwcm9iZTogbGlzdCBjb250YWluZXJzIChyZXR1
+      cm5zIGF0IG1vc3QgMSByZXN1bHQpDQogICAgICAgICRibG9iQ2xpZW50LT5saXN0Q29udGFp
+      bmVycyhbJ01heFJlc3VsdHMnID0+IDFdKTsNCiAgICAgICAgJHN0b3JhZ2VPayAgICAgID0g
+      dHJ1ZTsNCiAgICAgICAgJHN0b3JhZ2VNZXNzYWdlID0gJ0Nvbm5lY3RlZCBzdWNjZXNzZnVs
+      bHkuJzsNCiAgICB9IGNhdGNoIChTZXJ2aWNlRXhjZXB0aW9uICRlKSB7DQogICAgICAgICRz
+      dG9yYWdlTWVzc2FnZSA9ICdTdG9yYWdlIGVycm9yOiAnIC4gaHRtbHNwZWNpYWxjaGFycygk
+      ZS0+Z2V0TWVzc2FnZSgpLCBFTlRfUVVPVEVTLCAnVVRGLTgnKTsNCiAgICB9IGNhdGNoIChF
+      eGNlcHRpb24gJGUpIHsNCiAgICAgICAgJHN0b3JhZ2VNZXNzYWdlID0gJ0Nvbm5lY3Rpb24g
+      ZXJyb3I6ICcgLiBodG1sc3BlY2lhbGNoYXJzKCRlLT5nZXRNZXNzYWdlKCksIEVOVF9RVU9U
+      RVMsICdVVEYtOCcpOw0KICAgIH0NCn0NCg0KLy8gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+      LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQovLyBI
+      YW5kbGUgZmlsZSB1cGxvYWQNCi8vIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+      LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0KJHVwbG9hZFJlc3Vs
+      dCAgPSBudWxsOyAvLyAnc3VjY2VzcycgfCAnZXJyb3InDQokdXBsb2FkTWVzc2FnZSA9ICcn
+      Ow0KDQppZiAoJF9TRVJWRVJbJ1JFUVVFU1RfTUVUSE9EJ10gPT09ICdQT1NUJyAmJiBpc3Nl
+      dCgkX0ZJTEVTWydkb2N1bWVudCddKSkgew0KICAgICRmaWxlID0gJF9GSUxFU1snZG9jdW1l
+      bnQnXTsNCg0KICAgIGlmICgkZmlsZVsnZXJyb3InXSAhPT0gVVBMT0FEX0VSUl9PSykgew0K
+      ICAgICAgICAkdXBsb2FkUmVzdWx0ICA9ICdlcnJvcic7DQogICAgICAgICR1cGxvYWRNZXNz
+      YWdlID0gJ1VwbG9hZCBmYWlsZWQgd2l0aCBlcnJvciBjb2RlICcgLiAoaW50KSAkZmlsZVsn
+      ZXJyb3InXSAuICcuJzsNCiAgICB9IGVsc2VpZiAoJGZpbGVbJ3NpemUnXSA+IE1BWF9GSUxF
+      X1NJWkVfTUIgKiAxMDI0ICogMTAyNCkgew0KICAgICAgICAkdXBsb2FkUmVzdWx0ICA9ICdl
+      cnJvcic7DQogICAgICAgICR1cGxvYWRNZXNzYWdlID0gJ0ZpbGUgZXhjZWVkcyB0aGUgJyAu
+      IE1BWF9GSUxFX1NJWkVfTUIgLiAnIE1CIHNpemUgbGltaXQuJzsNCiAgICB9IGVsc2Ugew0K
+      ICAgICAgICAvLyBWYWxpZGF0ZSBNSU1FIHR5cGUgdmlhIGZpbmZvIChtb3JlIHJlbGlhYmxl
+      IHRoYW4gJF9GSUxFU1sndHlwZSddKQ0KICAgICAgICAkZmluZm8gICAgPSBuZXcgZmluZm8o
+      RklMRUlORk9fTUlNRV9UWVBFKTsNCiAgICAgICAgJG1pbWVUeXBlID0gJGZpbmZvLT5maWxl
+      KCRmaWxlWyd0bXBfbmFtZSddKTsNCiAgICAgICAgJGV4dCAgICAgID0gc3RydG9sb3dlcihw
+      YXRoaW5mbygkZmlsZVsnbmFtZSddLCBQQVRISU5GT19FWFRFTlNJT04pKTsNCg0KICAgICAg
+      ICBpZiAoIWluX2FycmF5KCRtaW1lVHlwZSwgQUxMT1dFRF9UWVBFUywgdHJ1ZSkgfHwgIWlu
+      X2FycmF5KCRleHQsIEFMTE9XRURfRVhURU5TSU9OUywgdHJ1ZSkpIHsNCiAgICAgICAgICAg
+      ICR1cGxvYWRSZXN1bHQgID0gJ2Vycm9yJzsNCiAgICAgICAgICAgICR1cGxvYWRNZXNzYWdl
+      ID0gJ1Vuc3VwcG9ydGVkIGZpbGUgdHlwZS4gUGxlYXNlIHVwbG9hZCBhIFBERiBvciBpbWFn
+      ZSAoSlBHLCBQTkcsIEdJRikuJzsNCiAgICAgICAgfSBlbHNlaWYgKCEkc3RvcmFnZU9rKSB7
+      DQogICAgICAgICAgICAkdXBsb2FkUmVzdWx0ICA9ICdlcnJvcic7DQogICAgICAgICAgICAk
+      dXBsb2FkTWVzc2FnZSA9ICdDYW5ub3QgdXBsb2FkOiBzdG9yYWdlIGlzIG5vdCBhdmFpbGFi
+      bGUuJzsNCiAgICAgICAgfSBlbHNlIHsNCiAgICAgICAgICAgIC8vIEJ1aWxkIGEgc2FmZSwg
+      dW5pcXVlIGJsb2IgbmFtZQ0KICAgICAgICAgICAgJHNhZmVOYW1lICAgPSBwcmVnX3JlcGxh
+      Y2UoJy9bXmEtekEtWjAtOS5cLV9dLycsICdfJywgYmFzZW5hbWUoJGZpbGVbJ25hbWUnXSkp
+      Ow0KICAgICAgICAgICAgJGJsb2JOYW1lICAgPSBkYXRlKCdZbWRfSGlzJykgLiAnXycgLiBi
+      aW4yaGV4KHJhbmRvbV9ieXRlcyg0KSkgLiAnXycgLiAkc2FmZU5hbWU7DQogICAgICAgICAg
+      ICAkZmlsZUhhbmRsZSA9IGZvcGVuKCRmaWxlWyd0bXBfbmFtZSddLCAncmInKTsNCg0KICAg
+      ICAgICAgICAgdHJ5IHsNCiAgICAgICAgICAgICAgICAvLyBFbnN1cmUgdGhlIGNvbnRhaW5l
+      ciBleGlzdHMNCiAgICAgICAgICAgICAgICB0cnkgew0KICAgICAgICAgICAgICAgICAgICAk
+      YmxvYkNsaWVudC0+Y3JlYXRlQ29udGFpbmVyKFNUT1JBR0VfQ09OVEFJTkVSKTsNCiAgICAg
+      ICAgICAgICAgICB9IGNhdGNoIChTZXJ2aWNlRXhjZXB0aW9uICRlKSB7DQogICAgICAgICAg
+      ICAgICAgICAgIC8vIDQwOSBDb25mbGljdCBtZWFucyBpdCBhbHJlYWR5IGV4aXN0cyDigJQg
+      dGhhdCBpcyBmaW5lDQogICAgICAgICAgICAgICAgICAgIGlmICgkZS0+Z2V0Q29kZSgpICE9
+      PSA0MDkpIHsNCiAgICAgICAgICAgICAgICAgICAgICAgIHRocm93ICRlOw0KICAgICAgICAg
+      ICAgICAgICAgICB9DQogICAgICAgICAgICAgICAgfQ0KDQogICAgICAgICAgICAgICAgJGJs
+      b2JDbGllbnQtPmNyZWF0ZUJsb2NrQmxvYigNCiAgICAgICAgICAgICAgICAgICAgU1RPUkFH
+      RV9DT05UQUlORVIsDQogICAgICAgICAgICAgICAgICAgICRibG9iTmFtZSwNCiAgICAgICAg
+      ICAgICAgICAgICAgJGZpbGVIYW5kbGUsDQogICAgICAgICAgICAgICAgICAgIG51bGwgIC8v
+      IHVzZSBkZWZhdWx0IENyZWF0ZUJsb2JPcHRpb25zDQogICAgICAgICAgICAgICAgKTsNCg0K
+      ICAgICAgICAgICAgICAgIGZjbG9zZSgkZmlsZUhhbmRsZSk7DQogICAgICAgICAgICAgICAg
+      JHVwbG9hZFJlc3VsdCAgPSAnc3VjY2Vzcyc7DQogICAgICAgICAgICAgICAgJHVwbG9hZE1l
+      c3NhZ2UgPSAnWW91ciBkb2N1bWVudCAmbGRxdW87JyAuIGh0bWxzcGVjaWFsY2hhcnMoJHNh
+      ZmVOYW1lLCBFTlRfUVVPVEVTLCAnVVRGLTgnKQ0KICAgICAgICAgICAgICAgICAgICAuICcm
+      cmRxdW87IGhhcyBiZWVuIHVwbG9hZGVkIHN1Y2Nlc3NmdWxseS4nOw0KICAgICAgICAgICAg
+      fSBjYXRjaCAoU2VydmljZUV4Y2VwdGlvbiAkZSkgew0KICAgICAgICAgICAgICAgIGlmIChp
+      c19yZXNvdXJjZSgkZmlsZUhhbmRsZSkpIHsNCiAgICAgICAgICAgICAgICAgICAgZmNsb3Nl
+      KCRmaWxlSGFuZGxlKTsNCiAgICAgICAgICAgICAgICB9DQogICAgICAgICAgICAgICAgJHVw
+      bG9hZFJlc3VsdCAgPSAnZXJyb3InOw0KICAgICAgICAgICAgICAgICR1cGxvYWRNZXNzYWdl
+      ID0gJ1VwbG9hZCBmYWlsZWQ6ICcgLiBodG1sc3BlY2lhbGNoYXJzKCRlLT5nZXRNZXNzYWdl
+      KCksIEVOVF9RVU9URVMsICdVVEYtOCcpOw0KICAgICAgICAgICAgfQ0KICAgICAgICB9DQog
+      ICAgfQ0KfQ0KPz4NCjwhRE9DVFlQRSBodG1sPg0KPGh0bWwgbGFuZz0iZW4iPg0KPGhlYWQ+
+      DQogICAgPG1ldGEgY2hhcnNldD0iVVRGLTgiPg0KICAgIDxtZXRhIG5hbWU9InZpZXdwb3J0
+      IiBjb250ZW50PSJ3aWR0aD1kZXZpY2Utd2lkdGgsIGluaXRpYWwtc2NhbGU9MS4wIj4NCiAg
+      ICA8dGl0bGU+T3BlbiBEYXkgUmVnaXN0cmF0aW9uICZuZGFzaDsgRG9jdW1lbnQgVXBsb2Fk
+      PC90aXRsZT4NCiAgICA8c3R5bGU+DQogICAgICAgICosICo6OmJlZm9yZSwgKjo6YWZ0ZXIg
+      eyBib3gtc2l6aW5nOiBib3JkZXItYm94OyBtYXJnaW46IDA7IHBhZGRpbmc6IDA7IH0NCg0K
+      ICAgICAgICBib2R5IHsNCiAgICAgICAgICAgIGZvbnQtZmFtaWx5OiBzeXN0ZW0tdWksIEFy
+      aWFsLCBzYW5zLXNlcmlmOw0KICAgICAgICAgICAgYmFja2dyb3VuZDogI2Y0ZjZmOTsNCiAg
+      ICAgICAgICAgIGNvbG9yOiAjMjIyOw0KICAgICAgICAgICAgbWluLWhlaWdodDogMTAwdmg7
+      DQogICAgICAgICAgICBkaXNwbGF5OiBmbGV4Ow0KICAgICAgICAgICAgZmxleC1kaXJlY3Rp
+      b246IGNvbHVtbjsNCiAgICAgICAgfQ0KDQogICAgICAgIGhlYWRlciB7DQogICAgICAgICAg
+      ICBiYWNrZ3JvdW5kOiAjMDAzMzY2Ow0KICAgICAgICAgICAgY29sb3I6ICNmZmY7DQogICAg
+      ICAgICAgICBwYWRkaW5nOiAxLjJyZW0gMnJlbTsNCiAgICAgICAgfQ0KICAgICAgICBoZWFk
+      ZXIgaDEgIHsgZm9udC1zaXplOiAxLjRyZW07IGZvbnQtd2VpZ2h0OiA3MDA7IH0NCiAgICAg
+      ICAgaGVhZGVyIHAgICB7IGZvbnQtc2l6ZTogMC45cmVtOyBtYXJnaW4tdG9wOiAwLjI1cmVt
+      OyBvcGFjaXR5OiAwLjg1OyB9DQoNCiAgICAgICAgbWFpbiB7DQogICAgICAgICAgICBmbGV4
+      OiAxOw0KICAgICAgICAgICAgbWF4LXdpZHRoOiA3MDBweDsNCiAgICAgICAgICAgIHdpZHRo
+      OiAxMDAlOw0KICAgICAgICAgICAgbWFyZ2luOiAycmVtIGF1dG87DQogICAgICAgICAgICBw
+      YWRkaW5nOiAwIDFyZW07DQogICAgICAgIH0NCg0KICAgICAgICAvKiBTdGF0dXMgcGFuZWwg
+      Ki8NCiAgICAgICAgLnN0YXR1cy1wYW5lbCB7DQogICAgICAgICAgICBiYWNrZ3JvdW5kOiAj
+      ZmZmOw0KICAgICAgICAgICAgYm9yZGVyOiAxcHggc29saWQgI2RkZTNlYzsNCiAgICAgICAg
+      ICAgIGJvcmRlci1yYWRpdXM6IDZweDsNCiAgICAgICAgICAgIHBhZGRpbmc6IDFyZW0gMS4y
+      NXJlbTsNCiAgICAgICAgICAgIG1hcmdpbi1ib3R0b206IDEuNXJlbTsNCiAgICAgICAgfQ0K
+      ICAgICAgICAuc3RhdHVzLXBhbmVsIGgyIHsNCiAgICAgICAgICAgIGZvbnQtc2l6ZTogMC44
+      NXJlbTsNCiAgICAgICAgICAgIHRleHQtdHJhbnNmb3JtOiB1cHBlcmNhc2U7DQogICAgICAg
+      ICAgICBsZXR0ZXItc3BhY2luZzogMC4wNWVtOw0KICAgICAgICAgICAgY29sb3I6ICM2NjY7
+      DQogICAgICAgICAgICBtYXJnaW4tYm90dG9tOiAwLjc1cmVtOw0KICAgICAgICB9DQogICAg
+      ICAgIC5zdGF0dXMtcm93IHsNCiAgICAgICAgICAgIGRpc3BsYXk6IGZsZXg7DQogICAgICAg
+      ICAgICBhbGlnbi1pdGVtczogZmxleC1zdGFydDsNCiAgICAgICAgICAgIGdhcDogMC42cmVt
+      Ow0KICAgICAgICAgICAgZm9udC1zaXplOiAwLjlyZW07DQogICAgICAgICAgICBwYWRkaW5n
+      OiAwLjM1cmVtIDA7DQogICAgICAgICAgICBib3JkZXItdG9wOiAxcHggc29saWQgI2YwZjBm
+      MDsNCiAgICAgICAgfQ0KICAgICAgICAuc3RhdHVzLXJvdzpmaXJzdC1vZi10eXBlIHsgYm9y
+      ZGVyLXRvcDogbm9uZTsgfQ0KICAgICAgICAuc3RhdHVzLWxhYmVsIHsgZm9udC13ZWlnaHQ6
+      IDYwMDsgbWluLXdpZHRoOiAxMzBweDsgZmxleC1zaHJpbms6IDA7IH0NCiAgICAgICAgLmJh
+      ZGdlIHsNCiAgICAgICAgICAgIGRpc3BsYXk6IGlubGluZS1ibG9jazsNCiAgICAgICAgICAg
+      IHBhZGRpbmc6IDAuMTVyZW0gMC41NXJlbTsNCiAgICAgICAgICAgIGJvcmRlci1yYWRpdXM6
+      IDEycHg7DQogICAgICAgICAgICBmb250LXNpemU6IDAuNzhyZW07DQogICAgICAgICAgICBm
+      b250LXdlaWdodDogNzAwOw0KICAgICAgICAgICAgdGV4dC10cmFuc2Zvcm06IHVwcGVyY2Fz
+      ZTsNCiAgICAgICAgICAgIGxldHRlci1zcGFjaW5nOiAwLjA0ZW07DQogICAgICAgICAgICBm
+      bGV4LXNocmluazogMDsNCiAgICAgICAgfQ0KICAgICAgICAuYmFkZ2Utb2sgIHsgYmFja2dy
+      b3VuZDogI2Q0ZWRkYTsgY29sb3I6ICMxNTU3MjQ7IH0NCiAgICAgICAgLmJhZGdlLWVyciB7
+      IGJhY2tncm91bmQ6ICNmOGQ3ZGE7IGNvbG9yOiAjNzIxYzI0OyB9DQogICAgICAgIC5zdGF0
+      dXMtZGV0YWlsIHsgY29sb3I6ICM1NTU7IH0NCg0KICAgICAgICAvKiBVcGxvYWQgY2FyZCAq
+      Lw0KICAgICAgICAuY2FyZCB7DQogICAgICAgICAgICBiYWNrZ3JvdW5kOiAjZmZmOw0KICAg
+      ICAgICAgICAgYm9yZGVyOiAxcHggc29saWQgI2RkZTNlYzsNCiAgICAgICAgICAgIGJvcmRl
+      ci1yYWRpdXM6IDZweDsNCiAgICAgICAgICAgIHBhZGRpbmc6IDEuNXJlbSAxLjI1cmVtOw0K
+      ICAgICAgICB9DQogICAgICAgIC5jYXJkIGgyIHsgZm9udC1zaXplOiAxLjFyZW07IG1hcmdp
+      bi1ib3R0b206IDAuNXJlbTsgfQ0KICAgICAgICAuY2FyZCBwICB7IGZvbnQtc2l6ZTogMC45
+      cmVtOyBjb2xvcjogIzU1NTsgbWFyZ2luLWJvdHRvbTogMS4yNXJlbTsgfQ0KDQogICAgICAg
+      IGxhYmVsW2Zvcj0iZG9jdW1lbnQiXSB7DQogICAgICAgICAgICBkaXNwbGF5OiBibG9jazsN
+      CiAgICAgICAgICAgIGZvbnQtd2VpZ2h0OiA2MDA7DQogICAgICAgICAgICBtYXJnaW4tYm90
+      dG9tOiAwLjRyZW07DQogICAgICAgICAgICBmb250LXNpemU6IDAuOXJlbTsNCiAgICAgICAg
+      fQ0KICAgICAgICAuaGludCB7DQogICAgICAgICAgICBmb250LXNpemU6IDAuOHJlbTsNCiAg
+      ICAgICAgICAgIGNvbG9yOiAjNzc3Ow0KICAgICAgICAgICAgbWFyZ2luLWJvdHRvbTogMC43
+      NXJlbTsNCiAgICAgICAgfQ0KICAgICAgICBpbnB1dFt0eXBlPSJmaWxlIl0gew0KICAgICAg
+      ICAgICAgZGlzcGxheTogYmxvY2s7DQogICAgICAgICAgICB3aWR0aDogMTAwJTsNCiAgICAg
+      ICAgICAgIHBhZGRpbmc6IDAuNXJlbTsNCiAgICAgICAgICAgIGJvcmRlcjogMXB4IHNvbGlk
+      ICNjY2QzZGU7DQogICAgICAgICAgICBib3JkZXItcmFkaXVzOiA0cHg7DQogICAgICAgICAg
+      ICBiYWNrZ3JvdW5kOiAjZmFmYmZjOw0KICAgICAgICAgICAgZm9udC1zaXplOiAwLjlyZW07
+      DQogICAgICAgICAgICBtYXJnaW4tYm90dG9tOiAxcmVtOw0KICAgICAgICB9DQogICAgICAg
+      IGJ1dHRvblt0eXBlPSJzdWJtaXQiXSB7DQogICAgICAgICAgICBiYWNrZ3JvdW5kOiAjMDAz
+      MzY2Ow0KICAgICAgICAgICAgY29sb3I6ICNmZmY7DQogICAgICAgICAgICBib3JkZXI6IG5v
+      bmU7DQogICAgICAgICAgICBwYWRkaW5nOiAwLjY1cmVtIDEuNXJlbTsNCiAgICAgICAgICAg
+      IGJvcmRlci1yYWRpdXM6IDRweDsNCiAgICAgICAgICAgIGZvbnQtc2l6ZTogMC45NXJlbTsN
+      CiAgICAgICAgICAgIGN1cnNvcjogcG9pbnRlcjsNCiAgICAgICAgfQ0KICAgICAgICBidXR0
+      b25bdHlwZT0ic3VibWl0Il06aG92ZXIgIHsgYmFja2dyb3VuZDogIzAwMjc1YTsgfQ0KICAg
+      ICAgICBidXR0b25bdHlwZT0ic3VibWl0Il06YWN0aXZlIHsgYmFja2dyb3VuZDogIzAwMWQ0
+      MjsgfQ0KICAgICAgICBidXR0b25bdHlwZT0ic3VibWl0Il06ZGlzYWJsZWQgew0KICAgICAg
+      ICAgICAgYmFja2dyb3VuZDogIzhmYThjODsNCiAgICAgICAgICAgIGN1cnNvcjogbm90LWFs
+      bG93ZWQ7DQogICAgICAgIH0NCg0KICAgICAgICAvKiBBbGVydCBtZXNzYWdlcyAqLw0KICAg
+      ICAgICAuYWxlcnQgew0KICAgICAgICAgICAgcGFkZGluZzogMC44NXJlbSAxcmVtOw0KICAg
+      ICAgICAgICAgYm9yZGVyLXJhZGl1czogNHB4Ow0KICAgICAgICAgICAgbWFyZ2luLWJvdHRv
+      bTogMXJlbTsNCiAgICAgICAgICAgIGZvbnQtc2l6ZTogMC45cmVtOw0KICAgICAgICB9DQog
+      ICAgICAgIC5hbGVydC1zdWNjZXNzIHsgYmFja2dyb3VuZDogI2Q0ZWRkYTsgY29sb3I6ICMx
+      NTU3MjQ7IGJvcmRlcjogMXB4IHNvbGlkICNjM2U2Y2I7IH0NCiAgICAgICAgLmFsZXJ0LWVy
+      cm9yICAgeyBiYWNrZ3JvdW5kOiAjZjhkN2RhOyBjb2xvcjogIzcyMWMyNDsgYm9yZGVyOiAx
+      cHggc29saWQgI2Y1YzZjYjsgfQ0KDQogICAgICAgIGZvb3RlciB7DQogICAgICAgICAgICB0
+      ZXh0LWFsaWduOiBjZW50ZXI7DQogICAgICAgICAgICBmb250LXNpemU6IDAuNzhyZW07DQog
+      ICAgICAgICAgICBjb2xvcjogIzk5OTsNCiAgICAgICAgICAgIHBhZGRpbmc6IDEuNXJlbTsN
+      CiAgICAgICAgfQ0KICAgIDwvc3R5bGU+DQo8L2hlYWQ+DQo8Ym9keT4NCg0KPGhlYWRlcj4N
+      CiAgICA8aDE+T3BlbiBEYXkgUmVnaXN0cmF0aW9uPC9oMT4NCiAgICA8cD5Eb2N1bWVudCBV
+      cGxvYWQgUG9ydGFsPC9wPg0KPC9oZWFkZXI+DQoNCjxtYWluPg0KDQogICAgPCEtLSBTeXN0
+      ZW0gc3RhdHVzIC0tPg0KICAgIDxkaXYgY2xhc3M9InN0YXR1cy1wYW5lbCI+DQogICAgICAg
+      IDxoMj5TeXN0ZW0gU3RhdHVzPC9oMj4NCg0KICAgICAgICA8ZGl2IGNsYXNzPSJzdGF0dXMt
+      cm93Ij4NCiAgICAgICAgICAgIDxzcGFuIGNsYXNzPSJzdGF0dXMtbGFiZWwiPldlYiBzZXJ2
+      ZXI8L3NwYW4+DQogICAgICAgICAgICA8c3BhbiBjbGFzcz0iYmFkZ2UgYmFkZ2Utb2siPk9L
+      PC9zcGFuPg0KICAgICAgICAgICAgPHNwYW4gY2xhc3M9InN0YXR1cy1kZXRhaWwiPjw/PSBo
+      dG1sc3BlY2lhbGNoYXJzKCRob3N0bmFtZSwgRU5UX1FVT1RFUywgJ1VURi04JykgPz48L3Nw
+      YW4+DQogICAgICAgIDwvZGl2Pg0KDQogICAgICAgIDxkaXYgY2xhc3M9InN0YXR1cy1yb3ci
+      Pg0KICAgICAgICAgICAgPHNwYW4gY2xhc3M9InN0YXR1cy1sYWJlbCI+QXp1cmUgU3RvcmFn
+      ZTwvc3Bhbj4NCiAgICAgICAgICAgIDw/cGhwIGlmICgkc3RvcmFnZU9rKTogPz4NCiAgICAg
+      ICAgICAgICAgICA8c3BhbiBjbGFzcz0iYmFkZ2UgYmFkZ2Utb2siPk9LPC9zcGFuPg0KICAg
+      ICAgICAgICAgPD9waHAgZWxzZTogPz4NCiAgICAgICAgICAgICAgICA8c3BhbiBjbGFzcz0i
+      YmFkZ2UgYmFkZ2UtZXJyIj5FcnJvcjwvc3Bhbj4NCiAgICAgICAgICAgIDw/cGhwIGVuZGlm
+      OyA/Pg0KICAgICAgICAgICAgPHNwYW4gY2xhc3M9InN0YXR1cy1kZXRhaWwiPjw/PSAkc3Rv
+      cmFnZU1lc3NhZ2UgPz48L3NwYW4+DQogICAgICAgIDwvZGl2Pg0KICAgIDwvZGl2Pg0KDQog
+      ICAgPCEtLSBVcGxvYWQgZm9ybSAtLT4NCiAgICA8ZGl2IGNsYXNzPSJjYXJkIj4NCiAgICAg
+      ICAgPGgyPlVwbG9hZCBTdXBwb3J0aW5nIERvY3VtZW50PC9oMj4NCiAgICAgICAgPHA+DQog
+      ICAgICAgICAgICBQbGVhc2UgdXBsb2FkIGFueSBzdXBwb3J0aW5nIGRvY3VtZW50cyByZXF1
+      aXJlZCBmb3IgeW91ciBpbnRlcnZpZXcNCiAgICAgICAgICAgIChlLmcuIGlkZW50aWZpY2F0
+      aW9uLCBxdWFsaWZpY2F0aW9ucywgb3IgcG9ydGZvbGlvIG1hdGVyaWFscykuDQogICAgICAg
+      ICAgICBBY2NlcHRlZCBmb3JtYXRzOiBQREYsIEpQRywgUE5HLCBHSUYgJm1kYXNoOyB1cCB0
+      byA8Pz0gTUFYX0ZJTEVfU0laRV9NQiA/PiBNQi4NCiAgICAgICAgPC9wPg0KDQogICAgICAg
+      IDw/cGhwIGlmICgkdXBsb2FkUmVzdWx0ID09PSAnc3VjY2VzcycpOiA/Pg0KICAgICAgICAg
+      ICAgPGRpdiBjbGFzcz0iYWxlcnQgYWxlcnQtc3VjY2VzcyI+PD89ICR1cGxvYWRNZXNzYWdl
+      ID8+PC9kaXY+DQogICAgICAgIDw/cGhwIGVsc2VpZiAoJHVwbG9hZFJlc3VsdCA9PT0gJ2Vy
+      cm9yJyk6ID8+DQogICAgICAgICAgICA8ZGl2IGNsYXNzPSJhbGVydCBhbGVydC1lcnJvciI+
+      PD89ICR1cGxvYWRNZXNzYWdlID8+PC9kaXY+DQogICAgICAgIDw/cGhwIGVuZGlmOyA/Pg0K
+      DQogICAgICAgIDxmb3JtIG1ldGhvZD0iUE9TVCIgZW5jdHlwZT0ibXVsdGlwYXJ0L2Zvcm0t
+      ZGF0YSIgbm92YWxpZGF0ZT4NCiAgICAgICAgICAgIDxpbnB1dCB0eXBlPSJoaWRkZW4iIG5h
+      bWU9Ik1BWF9GSUxFX1NJWkUiDQogICAgICAgICAgICAgICAgICAgdmFsdWU9Ijw/PSBNQVJF
+      X0ZJTEVfU0laRV9NQiAqIDEwMjQgKiAxMDI0ID8+Ij4NCg0KICAgICAgICAgICAgPGxhYmVs
+      IGZvcj0iZG9jdW1lbnQiPlN1cHBvcnRpbmcgZG9jdW1lbnQ8L2xhYmVsPg0KICAgICAgICAg
+      ICAgPHNwYW4gY2xhc3M9ImhpbnQiPlBERiwgSlBHLCBQTkcgb3IgR0lGICZtZGFzaDsgbWF4
+      aW11bSA8Pz0gTUFYX0ZJTEVfU0laRV9NQiA/PiBNQjwvc3Bhbj4NCiAgICAgICAgICAgIDxp
+      bnB1dCB0eXBlPSJmaWxlIiBpZD0iZG9jdW1lbnQiIG5hbWU9ImRvY3VtZW50Ig0KICAgICAg
+      ICAgICAgICAgICAgIGFjY2VwdD0iLnBkZiwuanBnLC5qcGVnLC5wbmcsLmdpZiIgcmVxdWly
+      ZWQ+DQoNCiAgICAgICAgICAgIDxidXR0b24gdHlwZT0ic3VibWl0IiA8Pz0gJHN0b3JhZ2VP
+      ayA/ICcnIDogJ2Rpc2FibGVkJyA/Pj4NCiAgICAgICAgICAgICAgICBVcGxvYWQgRG9jdW1l
+      bnQNCiAgICAgICAgICAgIDwvYnV0dG9uPg0KICAgICAgICAgICAgPD9waHAgaWYgKCEkc3Rv
+      cmFnZU9rKTogPz4NCiAgICAgICAgICAgICAgICA8cCBjbGFzcz0iaGludCIgc3R5bGU9Im1h
+      cmdpbi10b3A6MC41cmVtOyI+DQogICAgICAgICAgICAgICAgICAgIFVwbG9hZCBpcyBkaXNh
+      YmxlZCBiZWNhdXNlIHN0b3JhZ2UgaXMgdW5hdmFpbGFibGUuDQogICAgICAgICAgICAgICAg
+      PC9wPg0KICAgICAgICAgICAgPD9waHAgZW5kaWY7ID8+DQogICAgICAgIDwvZm9ybT4NCiAg
+      ICA8L2Rpdj4NCg0KPC9tYWluPg0KDQo8Zm9vdGVyPg0KICAgICZjb3B5OyA8Pz0gZGF0ZSgn
+      WScpID8+IENvbGxlZ2UgT3BlbiBEYXkgUmVnaXN0cmF0aW9uIFN5c3RlbQ0KPC9mb290ZXI+
+      DQoNCjwvYm9keT4NCjwvaHRtbD4NCg==
+
+  # -- composer.json --------------------------------------------------------
+  - path: /var/www/openday/composer.json
+    encoding: b64
+    owner: www-data:www-data
+    permissions: '0640'
+    content: ew0KICAgICJyZXF1aXJlIjogew0KICAgICAgICAibWljcm9zb2Z0L2F6dXJlLXN0b3JhZ2UtYmxvYiI6ICJeMS41Ig0KICAgIH0NCn0NCg==
+
+  # -- Apache virtual host --------------------------------------------------
+  - path: /etc/apache2/sites-available/openday.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      <VirtualHost *:80>
+          ServerAdmin webmaster@localhost
+          DocumentRoot /var/www/openday
+
+          <Directory /var/www/openday>
+              Options -Indexes -FollowSymLinks
+              AllowOverride None
+              Require all granted
+              DirectoryIndex index.php
+          </Directory>
+
+          Include conf-available/openday-env.conf
+
+          ErrorLog  ${APACHE_LOG_DIR}/openday-error.log
+          CustomLog ${APACHE_LOG_DIR}/openday-access.log combined
+      </VirtualHost>
+
+  # -- Apache environment variables (connection string) --------------------
+  # Replace the placeholder before passing this file to az vm create:
+  #   sed -i 's|REPLACE_WITH_CONNECTION_STRING|<your-string>|' cloud-init.yaml
+  - path: /etc/apache2/conf-available/openday-env.conf
+    owner: root:root
+    permissions: '0640'
+    content: |
+      # Azure Storage connection string for the Open Day Registration app.
+      SetEnv AZURE_STORAGE_CONNECTION_STRING "REPLACE_WITH_CONNECTION_STRING"
+
+
+# ---------------------------------------------------------------------------
+# Commands to run on first boot (after write_files)
+# ---------------------------------------------------------------------------
+runcmd:
+  # -- Install Composer -----------------------------------------------------
+  - |
+    EXPECTED="$(curl -sS https://composer.github.io/installer.sig)"
+    curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
+    ACTUAL="$(php -r "echo hash_file('sha384', '/tmp/composer-setup.php');")"
+    if [ "$EXPECTED" != "$ACTUAL" ]; then
+      echo "ERROR: Composer installer checksum mismatch" >&2
+      rm -f /tmp/composer-setup.php
+      exit 1
+    fi
+    php /tmp/composer-setup.php --quiet --install-dir=/usr/local/bin --filename=composer
+    rm -f /tmp/composer-setup.php
+
+  # -- Install PHP dependencies ---------------------------------------------
+  - composer install --working-dir=/var/www/openday --no-interaction --no-dev --optimize-autoloader --quiet
+
+  # -- File ownership and permissions ---------------------------------------
+  - chown -R www-data:www-data /var/www/openday
+  - find /var/www/openday -type d -exec chmod 750 {} \;
+  - find /var/www/openday -type f -exec chmod 640 {} \;
+
+  # -- Enable Apache modules, site; disable default site ------------------
+  - a2enmod rewrite
+  - a2enconf openday-env
+  - a2ensite openday
+  - a2dissite 000-default
+  - apache2ctl configtest
+
+  # -- Start and enable Apache on boot --------------------------------------
+  - systemctl restart apache2
+  - systemctl enable apache2
